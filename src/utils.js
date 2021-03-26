@@ -119,55 +119,109 @@ module.exports = class Utils {
   static selectFiles(config = {}) {
     return new Promise((resolve, reject) => {
       /**
-       * Create a new INPUT element
-       * @type {HTMLElement}
+       * Check cached INPUT element
+       * If inputElement is null, create INPUT element cache
        */
-      let inputElement = document.createElement('INPUT');
+      if (inputElement === null) {
+        /**
+         * Create a new INPUT element
+         * @type {HTMLElement}
+         */
+        inputElement = document.createElement('INPUT');
+
+        /**
+         * Set a 'FILE' type for this input element
+         * @type {string}
+         */
+        inputElement.type = 'file';
+
+        /**
+         * Do not show element
+         */
+        inputElement.style.display = 'none';
+
+        /**
+         * Append element to the body
+         * Fix using module on mobile devices
+         */
+        document.body.appendChild(inputElement);
+
+        /**
+         * Create event handler for resolving files
+         * @param {Event} event
+         */
+        const resolveFiles = event => {
+          /**
+           * Get files from input field
+           */
+          const files = event.target.files;
+
+          /**
+           * Return ready to be uploaded files array
+           */
+          resolve(files);
+
+          /**
+           * Remove event handler for preventing memory leak
+           */
+          inputElement.removeEventListener('change', resolveFiles);
+
+          /**
+           * Remove element from a DOM
+           */
+          document.body.removeChild(inputElement);
+
+          /**
+           * Remove input element
+           */
+          inputElement = null;
+        };
+
+        /**
+         * Add onchange listener for «choose file» pop-up
+         */
+        inputElement.addEventListener('change', resolveFiles, false);
+      }
 
       /**
-       * Set a 'FILE' type for this input element
-       * @type {string}
+       * Check "multiple" config
        */
-      inputElement.type = 'file';
-
       if (config.multiple) {
-        inputElement.setAttribute('multiple', 'multiple');
+        /**
+         * Check already to have "multiple" attribute with input element
+         */
+        if (!inputElement.hasAttribute('multiple')) {
+          /**
+           * Add "multiple" attribute to input element
+           */
+          inputElement.setAttribute('multiple', 'multiple');
+        }
+      } else {
+        /**
+         * Remove "multiple" attribute from input element
+         */
+        inputElement.removeAttribute('multiple');
       }
 
+      /**
+       * Check multiple "accept"
+       */
       if (config.accept) {
-        inputElement.setAttribute('accept', config.accept);
+        /**
+         * Check already to have "accept" attribute with input element
+         */
+        if (!inputElement.hasAttribute('accept')) {
+          /**
+           * Add "accept" attribute to input element
+           */
+          inputElement.setAttribute('accept', config.accept);
+        }
+      } else {
+        /**
+         * Remove "multiple" attribute from input element
+         */
+        inputElement.removeAttribute('accept')
       }
-
-      /**
-       * Do not show element
-       */
-      inputElement.style.display = 'none';
-
-      /**
-       * Append element to the body
-       * Fix using module on mobile devices
-       */
-      document.body.appendChild(inputElement);
-
-      /**
-       * Add onchange listener for «choose file» pop-up
-       */
-      inputElement.addEventListener('change', event => {
-        /**
-         * Get files from input field
-         */
-        const files = event.target.files;
-
-        /**
-         * Return ready to be uploaded files array
-         */
-        resolve(files);
-
-        /**
-         * Remove element from a DOM
-         */
-        document.body.removeChild(inputElement);
-      }, false);
 
       /**
        * Fire click event on «input file» field
@@ -233,3 +287,9 @@ module.exports = class Utils {
     return headerMap;
   }
 };
+
+/**
+ * Cached input element for preventing memory leak
+ * @type {HTMLInputElement}
+ */
+let inputElement = null;
